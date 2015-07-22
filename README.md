@@ -9,3 +9,7 @@
     `var io = require("socket.io").listen(**8090**);`
   * main.jsの21行目ぐらいのホスト・ポート番号を変更
     `var socket = io.connect(**"http://localhost:8090"**, { query: ("r="+ urlQueries()["r"] || "r=power") });`
+
+## How to run
+1. `node ws_server.js`
+2. ブラウザでアクセス
