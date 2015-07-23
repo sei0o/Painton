@@ -30,6 +30,7 @@ request.get({ // バズワード取得
 var roomAnswers = {}; // roomごとに答えを一時保存
 var readyClients = {};
 var currentThemes = {};
+var acceptClients = {};
 
 io.on("connection", function(socket){
   var room = socket.handshake.query.r;
@@ -37,10 +38,23 @@ io.on("connection", function(socket){
   if(clientsInRoom(room) == 1){ // room初期化(初めてのルーム参加者だったら)
     readyClients[room] = [];
     roomAnswers[room] = {};
+    acceptClients[room] = [];
   }
 
   socket.on("mouse", function(data){ // マウス操作時
     io.to(room).emit("mouse", data);
+  });
+
+  socket.on("requestClear", function(){
+    io.to(room).emit("requestClear", { from: socket.id });
+  });
+
+  socket.on("acceptClear", function(){
+    acceptClients[room].push(socket.id);
+    if(acceptClients[room].length == clientsInRoom(room) - 1){ // fromを除いて全員readyなら
+      io.to(room).emit("acceptedClear");
+      acceptClients[room] = [];
+    }
   });
 
   socket.on("ready", function(){

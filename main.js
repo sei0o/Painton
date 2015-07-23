@@ -21,6 +21,9 @@ var prevY;
 var socket = io.connect("http://localhost:8090", { query: ("r="+ urlQueries()["r"] || "r=power") });
 $("#room").html("Room: "+ (urlQueries()["r"] || "power"));
 
+ctx.lineJoin = "round"; // pathの連結部分
+ctx.lineCap = "round"; // pathの角
+
 canvas.mousemove(function(e){ draw(e, canvas.get(0)); });
 canvas.mousedown(function(){ clicking = true; }); // 押している間だけ描画
 canvas.mouseup(function(){
@@ -50,7 +53,8 @@ $("#pen-size").change(function(){
   penSize = $("#pen-size").val();
 });
 $("#clear").click(function(){
-  clear(ctx, canvas.get(0));
+  if(!confirm("消去してもいいですか？")) return;
+  socket.emit("requestClear");
 });
 $("#submit").click(sendAnswer);
 $("#ready").click(function(){
@@ -94,6 +98,15 @@ socket.on("theme", function(data){
   $("#answer").val("");
   $("#theme").html("");
 });
+socket.on("requestClear", function(data){
+  if(data.from == socket.id) return;
+  if(confirm(data.from +"が消去しようとしています。よろしいですか"))
+    socket.emit("acceptClear");
+});
+socket.on("acceptedClear", function(data){
+  // clear
+  clear(ctx, canvas.get(0));
+});
 
 function draw(e, canv){
   if(!clicking) return;
@@ -104,8 +117,6 @@ function draw(e, canv){
 
   ctx.strokeStyle = penColor;
   ctx.lineWidth = penSize;
-  ctx.lineJoin = "round"; // pathの連結部分
-  ctx.lineCap = "round"; // pathの角
 
   drawPath(ctx, prevX || mX, prevY || mY, mX, mY); // prevYがnullのとき(まだ１回も描画してない)
   sendCoordinate(prevX || mX, prevY || mY, mX, mY);
@@ -123,7 +134,6 @@ function drawPath(ctx, fromX, fromY, toX, toY){
 }
 
 function clear(ctx, canv){
-  if(!confirm("Okay?")) return;
   ctx.clearRect(0, 0, canv.width, canv.height);
 }
 
